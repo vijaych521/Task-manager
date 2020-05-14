@@ -30,8 +30,7 @@ router.get('/tasks/:id', async (request, response) => {
 router.post('/tasks', async (request, response) => {
     const task = new Task(request.body)
     try {
-        const savedtask = await task.save()
-        response.status(201).send(savedtask)
+        response.status(201).send(await task.save())
     } catch (error) {
         response.status(400).send(error)
     }
@@ -48,11 +47,15 @@ router.patch('/tasks/:id', async (request, response) => {
 
     const _id = request.params.id
     try {
-        const updatedTask = await Task.findByIdAndUpdate(_id, request.body, { new: true, runValidators: true })
+        // const updatedTask = await Task.findByIdAndUpdate(_id, request.body, { new: true, runValidators: true })
+        const updatedTask = await Task.findById(_id)
+        updatedParams.forEach(param => updatedTask[param] = request.body[param])
+        await updatedTask.save()
+        
         if (!updatedTask) {
             /**
-                 * this if code will handles the unhandledRejection of promise on line 71
-                 */
+             * this if code will handles the unhandledRejection of promise on line 71
+             */
             /*process.on('unhandledRejection', error => {
                 // Prints "unhandledRejection woops!"
                 console.log('unhandledRejection', error.test);

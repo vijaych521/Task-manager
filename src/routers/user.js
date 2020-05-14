@@ -5,10 +5,20 @@ const router = new express.Router
 
 router.get('/users', async (request, response) => {
     try {
-        const users = await User.find({})
-        response.send(users)
+        response.send(await User.find({}))
     } catch (errors) {
         response.status(500).send(errors)
+    }
+})
+
+router.post('/users', async (request, response) => {
+    const user = new User(request.body)
+    try {
+        const savedUser = await user.save()
+        response.status(201).send(savedUser)
+    } catch (error) {
+        response.status(400)
+        response.send(error)
     }
 })
 
@@ -26,17 +36,6 @@ router.get('/users/:id', async (request, response) => {
     }
 })
 
-router.post('/users', async (request, response) => {
-    const user = new User(request.body)
-    try {
-        const savedUser = await user.save()
-        response.status(201).send(savedUser)
-    } catch (error) {
-        response.status(400)
-        response.send(error)
-    }
-})
-
 // update user
 router.patch('/users/:id', async (request, response) => {
     // check updated parameters are valid or not
@@ -48,7 +47,11 @@ router.patch('/users/:id', async (request, response) => {
 
     const _id = request.params.id
     try {
-        const updatedUser = await User.findByIdAndUpdate(_id, request.body, { new: true, runValidators: true })
+        // const updatedUser = await User.findByIdAndUpdate(_id, request.body, { new: true, runValidators: true })
+        const updatedUser = await User.findById(_id)
+        updatedParams.forEach((param) => updatedUser[param] = request.body[param])
+        await updatedUser.save()
+
         if (!updatedUser) {
             // response.status(404).send("User not found with given id: ")
             await Promise.reject(new Error("Task not found with id: " + _id));
