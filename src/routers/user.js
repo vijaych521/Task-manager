@@ -1,5 +1,6 @@
 const User = require('../models/userModel')
 const express = require('express')
+const auth = require('../middleware/auth.js')
 
 const router = new express.Router
 
@@ -7,7 +8,7 @@ router.post('/users/login', async (request, response) => {
     try {
         const user = await User.findByUserCredentials(request.body.email, request.body.password)
         const token = await user.generateAuthToken() // call on user instance
-        response.send({user, token})
+        response.send({ user, token })
     } catch (error) {
         response.status(404).send(error.message)
     }
@@ -21,18 +22,25 @@ router.get('/users', async (request, response) => {
     }
 })
 
+// get user profile
+router.get('/users/me', auth, async (request, response) => {
+    response.send(request.user)
+})
+
+// create user request
 router.post('/users', async (request, response) => {
     const user = new User(request.body)
     try {
         const savedUser = await user.save()
         const token = await user.generateAuthToken()
-        response.status(201).send({savedUser, token})
+        response.status(201).send({ savedUser, token })
     } catch (error) {
         response.status(400)
         response.send(error)
     }
 })
 
+// get user by id
 router.get('/users/:id', async (request, response) => {
     const _id = request.params.id
     try {
@@ -94,6 +102,32 @@ router.delete('/users/:id', async (request, response) => {
         response.status(200).send(user)
     } catch (error) {
         response.status(400).send(error.message)
+    }
+})
+
+// logging out user
+router.post('/users/logout', auth, async (req, res) => {
+    try {
+        req.user.tokens = req.user.tokens.filter(t => {
+            return t.token !== req.token // removing request.token from user.tokens array object
+        })
+        console.log(req.user.tokens)
+        await req.user.save()
+
+        res.send()
+    } catch (error) {
+        res.send(400).send('Unbale to process')
+    }
+})
+
+// logout all session
+router.post('/users/logoutAll', auth, async (req, res) => {
+    try {
+        req.user.tokens = []
+        await req.user.save()
+        res.send("Logout successfully from all other devices")
+    } catch (error) {
+        res.status(500).send("unable to logout...")
     }
 })
 

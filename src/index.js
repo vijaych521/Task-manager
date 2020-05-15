@@ -14,9 +14,9 @@ const port = process.env.PORT || 3000
 // })
 
 // creating maintainence page
-app.use((req, res, next) => {
-    res.status(503).send("site under maintenennce")
-})
+// app.use((req, res, next) => {
+//     res.status(503).send("site under maintenennce")
+// })
 
 app.use(express.json(), userRouter, taskRouter)
 // app.use(userRouter)
