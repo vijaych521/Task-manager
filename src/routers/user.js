@@ -3,6 +3,16 @@ const express = require('express')
 
 const router = new express.Router
 
+router.post('/users/login', async (request, response) => {
+    try {
+        const user = await User.findByUserCredentials(request.body.email, request.body.password)
+        const token = await user.generateAuthToken() // call on user instance
+        response.send({user, token})
+    } catch (error) {
+        response.status(404).send(error.message)
+    }
+})
+
 router.get('/users', async (request, response) => {
     try {
         response.send(await User.find({}))
@@ -15,7 +25,8 @@ router.post('/users', async (request, response) => {
     const user = new User(request.body)
     try {
         const savedUser = await user.save()
-        response.status(201).send(savedUser)
+        const token = await user.generateAuthToken()
+        response.status(201).send({savedUser, token})
     } catch (error) {
         response.status(400)
         response.send(error)
