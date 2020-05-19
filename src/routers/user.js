@@ -8,7 +8,8 @@ router.post('/users/login', async (request, response) => {
     try {
         const user = await User.findByUserCredentials(request.body.email, request.body.password)
         const token = await user.generateAuthToken() // call on user instance
-        response.send({ user, token })
+        // response.send({ 'user': user.getPublicProfile(), token })
+        response.send({ user, token }) // here user object internally calls userSchema.methods.toJSON function
     } catch (error) {
         response.status(404).send(error.message)
     }
@@ -24,7 +25,7 @@ router.get('/users', async (request, response) => {
 
 // get user profile
 router.get('/users/me', auth, async (request, response) => {
-    response.send(request.user)
+    response.send(request.user) // here user object internally calls userSchema.methods.toJSON function
 })
 
 // create user request
@@ -56,7 +57,7 @@ router.get('/users/:id', async (request, response) => {
 })
 
 // update user
-router.patch('/users/:id', async (request, response) => {
+router.patch('/users/me', auth, async (request, response) => {
     // check updated parameters are valid or not
     const updatedParams = Object.keys(request.body)
     const userParams = ['name', 'age', 'email', 'password']
@@ -64,42 +65,20 @@ router.patch('/users/:id', async (request, response) => {
     if (!isValidKeys)
         response.status(400).send("Invalid Key to update")
 
-    const _id = request.params.id
     try {
-        // const updatedUser = await User.findByIdAndUpdate(_id, request.body, { new: true, runValidators: true })
-        const updatedUser = await User.findById(_id)
-        updatedParams.forEach((param) => updatedUser[param] = request.body[param])
-        await updatedUser.save()
-
-        if (!updatedUser) {
-            // response.status(404).send("User not found with given id: ")
-            await Promise.reject(new Error("Task not found with id: " + _id));
-        }
-        response.status(200).send(updatedUser)
+        updatedParams.forEach((param) => request.user[param] = request.body[param])  // here request object is updated from 'auth" function
+        await request.user.save()
+        response.status(200).send(request.user)
     } catch (error) {
         response.status(400).send(error.message)
     }
 })
 
 // delete user 
-router.delete('/users/:id', async (request, response) => {
-    const _id = request.params.id
+router.delete('/users/me', auth, async (request, response) => {
     try {
-        const user = await User.findByIdAndDelete(_id)
-        if (!user) {
-            /**
-             * this if code will handles the unhandledRejection of promise on line 71
-             */
-            // process.on('unhandledRejection', error => {
-            //     // Prints "unhandledRejection woops!"
-            //     console.log('unhandledRejection', error.test);
-            // });
-            // new Promise((_, reject) => reject({ test: 'woops!' }));
-            // response.status(404).send('User with given id not found')
-
-            await Promise.reject(new Error("Task not found with id: " + _id));
-        }
-        response.status(200).send(user)
+        await request.user.remove() // here request object is updated from 'auth" function
+        response.status(200).send({ "message": "User removed Successfully", user: request.user })
     } catch (error) {
         response.status(400).send(error.message)
     }
@@ -111,9 +90,7 @@ router.post('/users/logout', auth, async (req, res) => {
         req.user.tokens = req.user.tokens.filter(t => {
             return t.token !== req.token // removing request.token from user.tokens array object
         })
-        console.log(req.user.tokens)
-        await req.user.save()
-
+        await req.user.save("Logout successfully !!")
         res.send()
     } catch (error) {
         res.send(400).send('Unbale to process')
