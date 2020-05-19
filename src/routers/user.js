@@ -64,7 +64,6 @@ router.patch('/users/me', auth, async (request, response) => {
     const isValidKeys = updatedParams.every(param => { return userParams.includes(param) })
     if (!isValidKeys)
         response.status(400).send("Invalid Key to update")
-
     try {
         updatedParams.forEach((param) => request.user[param] = request.body[param])  // here request object is updated from 'auth" function
         await request.user.save()
