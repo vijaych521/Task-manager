@@ -47,14 +47,29 @@ const userSchema = new mongoose.Schema({
         }
     }]
 })
+
+/**
+ *  toJSON will return the customized object
+ */
+// userSchema.methods.getPublicProfile = function () {
+userSchema.methods.toJSON = function () {
+    // const user = this
+    const userObject = this.toObject()
+
+    delete userObject.password
+    delete userObject.tokens
+
+    return userObject
+}
+
 /**
  * Creating and verifying auth token
  * this method will be called on user instance
- */ 
+ */
 userSchema.methods.generateAuthToken = async function () {
     const user = this
     const token = jwt.sign({ _id: user._id.toString() }, jwtKey)
-    user.tokens = user.tokens.concat({token})
+    user.tokens = user.tokens.concat({ token })
     user.save()
 
     return token
