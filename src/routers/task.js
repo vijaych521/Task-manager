@@ -4,21 +4,23 @@ const auth = require('../middleware/auth.js')
 
 const router = new express.Router
 
-router.get('/tasks', async (request, response) => {
+router.get('/tasks', auth, async (request, response) => {
     try {
-        const tasks = await Task.find({})
-        response.send(tasks)
+        await request.user.populate('tasks').execPopulate()
+        // const tasks = await Task.find({ owner: request.user._id })
+        response.send(request.user.tasks)
     } catch (error) {
         response.status(404).send(error)
     }
 })
 
-router.get('/tasks/:id', async (request, response) => {
-    const _id = request.params.id
+router.get('/tasks/:id', auth, async (request, response) => {
+    const _task_id = request.params.id
     try {
-        const task = await Task.findById(_id)
+        //const task = await Task.findById(_task_id)
+        const task = await Task.findOne({ _id: _task_id, owner: request.user._id }) // here user._id is retured from Auth function
         if (!task) {
-            await Promise.reject(new Error("Task not found with id: " + _id));
+            await Promise.reject(new Error("Task not found with id: " + _task_id));
             // return response.status(404).send("Task with Not found with given id: " + _id)
         }
         response.send(task)
@@ -41,44 +43,32 @@ router.post('/tasks', auth, async (request, response) => {
 })
 
 //update tasks
-router.patch('/tasks/:id', async (request, response) => {
+router.patch('/tasks/:id', auth, async (request, response) => {
     // check updated parameters are valid or not
     const updatedParams = Object.keys(request.body)
     const permitedParams = ['description', 'completed']
     const isValidParams = updatedParams.every(param => { return permitedParams.includes(param) })
     if (!isValidParams)
         response.status(400).send("invalid params ")
-
-    const _id = request.params.id
+    const _task_id = request.params.id
     try {
         // const updatedTask = await Task.findByIdAndUpdate(_id, request.body, { new: true, runValidators: true })
-        const updatedTask = await Task.findById(_id)
-        updatedParams.forEach(param => updatedTask[param] = request.body[param])
-        await updatedTask.save()
-        
+        const updatedTask = await Task.findOne({ _id: _task_id, owner: request.user._id })
         if (!updatedTask) {
-            /**
-             * this if code will handles the unhandledRejection of promise on line 71
-             */
-            /*process.on('unhandledRejection', error => {
-                // Prints "unhandledRejection woops!"
-                console.log('unhandledRejection', error.test);
-            });
-            new Promise((_, reject) => reject({ test: 'woops!' }));*/
-
-            await Promise.reject(new Error("Task not found with id: " + _id));
+            await Promise.reject(new Error("Task not found with id: " + _task_id));
             // response.status(404).send("Task not found with id: " + _id)
         }
+        updatedParams.forEach(param => updatedTask[param] = request.body[param])
+        await updatedTask.save()
         response.status(201).send(updatedTask)
     } catch (error) {
         response.status(400).send(error.message)
     }
 })
 // delete task 
-router.delete('/tasks/:id', async (request, response) => {
-    const _id = request.params.id
+router.delete('/tasks/:id', auth, async (request, response) => {
     try {
-        const task = await Task.findByIdAndDelete(_id)
+        const task = await Task.findOneAndDelete({ _id: request.params.id, owner: request.user._id })
         if (!task) {
             await Promise.reject(new Error("Task not found with id: " + _id));
             // response.status(404).send("Task  not found with given id: " + _id)
@@ -86,6 +76,19 @@ router.delete('/tasks/:id', async (request, response) => {
         response.status(200).send(task)
     } catch (error) {
         response.status(400).send(error.message)
+    }
+})
+
+//delete all tasks related to user
+router.post('/tasks/deleteAll', auth, async (req, res) => {
+    try {
+        const query = Task.deleteMany({ owner: req.user._id })
+        if ((await query).deletedCount > 0)
+            res.status(200).send('All task deleted successfully')
+        else
+            await Promise.reject(new Error("No Tasks associated with user !!"))
+    } catch (error) {
+        res.status(400).send(error.message)
     }
 })
 
