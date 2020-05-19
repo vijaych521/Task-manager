@@ -1,6 +1,6 @@
 const express = require('express')
 const Task = require('../models/taskModel')
-global.Promise = require('bluebird');
+const auth = require('../middleware/auth.js')
 
 const router = new express.Router
 
@@ -27,8 +27,12 @@ router.get('/tasks/:id', async (request, response) => {
     }
 })
 
-router.post('/tasks', async (request, response) => {
-    const task = new Task(request.body)
+router.post('/tasks', auth, async (request, response) => {
+    // const task = new Task(request.body)
+    const task = new Task({
+        ...request.body, // using ES6 function 
+        'owner': request.user._id
+    })
     try {
         response.status(201).send(await task.save())
     } catch (error) {
@@ -85,10 +89,9 @@ router.delete('/tasks/:id', async (request, response) => {
     }
 })
 
-
+module.exports = router
 
 // async function rejected() {
 //     // No unhandled rejection!
 //     await Promise.reject(new Error('test'));
 // }
-module.exports = router
