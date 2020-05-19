@@ -5,7 +5,7 @@ const jwtKey = 'thisTokenForVijay'
 
 // Authenticate jsaon web token
 const auth = async (req, res, next) => {
-    console.log("Middle ware !!")
+    console.log("Middle ware: Authenticating Request token")
     try {
         const token = req.header('Authorization').replace("Bearer ", "")
         const decodedAuthToken = jwt.verify(token, jwtKey)

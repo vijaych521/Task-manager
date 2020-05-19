@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const validator = require('validator')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-
+const Task = require('./taskModel')
 const jwtKey = 'thisTokenForVijay'
 
 const userSchema = new mongoose.Schema({
@@ -96,10 +96,18 @@ userSchema.statics.findByUserCredentials = async (email, password) => {
 // performing some operation before saving user object using middleware 
 userSchema.pre('save', async function (next) {
     // hashing password before saving the user object
-    if (this.isModified('password'))
-        this.password = await bcrypt.hash(this.password, 8)
+    const user = this
+    if (user.isModified('password'))
+        user.password = await bcrypt.hash(user.password, 8)
     // if this function is not called process go into infinite loop 
     // mwe are letting mongoose know that our operation is done and now save the user
+    next()
+})
+
+// this function will run after user remove() mongoose function called
+userSchema.pre('remove', async function (next) {
+    const user = this
+    await Task.deleteMany({ owner: user.id })
     next()
 })
 

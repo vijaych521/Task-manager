@@ -34,8 +34,12 @@ const main = async () => {
     // await task.populate('owner').execPopulate()
     // console.log(task.owner)
 
-    const user = await User.findById('5ec3ddc7fd1a2043107bb8a7')
-    await user.populate('tasks').execPopulate()
-    console.log(user.tasks)
+    // const user = await User.findById('5ec3ddc7fd1a2043107bb8a7')
+    // await user.populate('tasks').execPopulate()
+    // console.log(user.tasks)
+
+
+    const flag = await Task.deleteMany({owner:'5ec41e2d4dbd4b1510343d3b'})
+    console.log(flag)
 }
-main()
+// main()
