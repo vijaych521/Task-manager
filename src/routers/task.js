@@ -4,9 +4,39 @@ const auth = require('../middleware/auth.js')
 
 const router = new express.Router
 
+//GET /tasks?completed=true
+/*GET /tasks?limit=2&skip=4
+    --> limit is number of records u want to show on each page
+    --> skip is number of records u want to skip for next page
+    limit = 2 and skip = 4 will skip the first 4 records and will show the 3rd page with records
+*/
+//GET /tasks?sortBy=createdAt:desc
+//GET /tasks?limit=3&skip=3&sortBy=createdAt:desc
+
 router.get('/tasks', auth, async (request, response) => {
+    console.log(request.query)
+    const match = {}
+    var sort = {}
+    // using filtering
+    if (request.query.completed)
+        match.completed = request.query.completed === 'true'
+    // sorting
+    if (request.query.sortBy) {
+        var parts = request.query.sortBy.split(':')
+        sort[parts[0]] = parts[1] === 'desc' ? -1 : 1
+    }
+
     try {
-        await request.user.populate('tasks').execPopulate()
+        // await request.user.populate('tasks').execPopulate()
+        await request.user.populate({
+            path: 'tasks',
+            match,
+            options: {
+                limit: parseInt(request.query.limit),
+                skip: parseInt(request.query.skip),
+                sort
+            },
+        }).execPopulate()
         // const tasks = await Task.find({ owner: request.user._id })
         response.send(request.user.tasks)
     } catch (error) {
