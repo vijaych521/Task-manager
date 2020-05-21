@@ -1,6 +1,7 @@
 const User = require('../models/userModel')
 const express = require('express')
 const auth = require('../middleware/auth.js')
+const multer = require('multer')
 
 const router = new express.Router
 
@@ -105,6 +106,28 @@ router.post('/users/logoutAll', auth, async (req, res) => {
     } catch (error) {
         res.status(500).send("unable to logout...")
     }
+})
+
+
+
+// Upload user profile image
+const upload = multer({
+    dest: 'avatars',
+    limits: {
+        fileSize: 1000000 // 1
+    },
+    fileFilter(req, file, callback) {
+        if (!file.originalname.match(/\.(png|jpg|JPG|jpeg)$/))
+            return callback(new Error("Please upload image file !!"))
+        callback(undefined, true)
+    }
+})
+
+router.post('/user/me/avatar', upload.single('avatar'), (req, res) => {
+    res.send("uplaoded success !!")
+}, (error, req, res, next) => {
+    // this callback is redirected from middleware i.e upload.single
+    res.send({ 'error': error.message })
 })
 
 module.exports = router

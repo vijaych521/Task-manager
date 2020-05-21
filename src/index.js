@@ -39,7 +39,28 @@ const main = async () => {
     // console.log(user.tasks)
 
 
-    const flag = await Task.deleteMany({owner:'5ec41e2d4dbd4b1510343d3b'})
+    const flag = await Task.deleteMany({ owner: '5ec41e2d4dbd4b1510343d3b' })
     console.log(flag)
 }
 // main()
+
+const multer = require('multer')
+
+const upload = multer({
+    dest: 'images',
+    limits: {
+        fileSize: 1000000 // 1
+    },
+    fileFilter(req, file, callback) {
+        if (!file.originalname.match(/\.(doc|docx)$/))
+            return callback(new Error("Please upload doc or docx file"))
+        callback(undefined, true)
+    }
+})
+
+app.post('/upload', upload.single('upload'), (req, res) => {
+    res.send("uplaoded success !!")
+}, (error, req, res, next) => {
+    // this callback is redirected from middleware i.e upload.single
+    res.send({ 'error': error.message })
+})
