@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
 
-const taskkSchema = mongoose.Schema({
+const taskkSchema = new mongoose.Schema({
     description: { type: String, required: [true, 'Enter the description of your task'], trim: true },
     completed: { type: Boolean, default: false },
     owner: {
@@ -9,6 +9,8 @@ const taskkSchema = mongoose.Schema({
         required: true,
         ref: 'User'
     }
+}, {
+    timestamps: true
 })
 
 // performing some operation before saving user object using middleware 
