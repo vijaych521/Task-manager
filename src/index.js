@@ -4,8 +4,7 @@ const userRouter = require('./routers/user')
 const taskRouter = require('./routers/task')
 
 const app = express()
-const port = process.env.PORT || 3000
-
+const port = process.env.PORT
 // creating maintainence page or as middleware
 // app.use((req, res, next) => {
 //     res.status(503).send("site under maintenennce")

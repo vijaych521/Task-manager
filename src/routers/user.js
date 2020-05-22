@@ -1,5 +1,5 @@
 const { User, express, auth, multer, sharp } = require("../imports/commonImports")
-
+const sgMail = require('../email/email_config')
 const router = new express.Router
 
 router.post('/users/login', async (request, response) => {
@@ -31,6 +31,7 @@ router.post('/users', async (request, response) => {
     const user = new User(request.body)
     try {
         const savedUser = await user.save()
+        sgMail.sendSgEmail(savedUser.email, savedUser.name)
         const token = await user.generateAuthToken()
         response.status(201).send({ savedUser, token })
     } catch (error) {
@@ -74,6 +75,7 @@ router.patch('/users/me', auth, async (request, response) => {
 // delete user 
 router.delete('/users/me', auth, async (request, response) => {
     try {
+        sgMail.sendCancleEmail(request.user.email, request.user.name)
         await request.user.remove() // here request object is updated from 'auth" function
         response.status(200).send({ "message": "User removed Successfully", user: request.user })
     } catch (error) {
