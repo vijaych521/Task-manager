@@ -2,7 +2,7 @@ const User = require('../models/userModel')
 const express = require('express')
 const auth = require('../middleware/auth.js')
 const multer = require('multer')
-
+const sharp = require('sharp')
 const router = new express.Router
 
 router.post('/users/login', async (request, response) => {
@@ -122,7 +122,9 @@ const upload = multer({
 
 // Upload user profile image
 router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
-    req.user.avatar = req.file.buffer
+    // req.user.avatar = req.file.buffer
+    const buffer = await sharp(req.file.buffer).resize({ width: 250, height: 250 }).png().toBuffer()
+    req.user.avatar = buffer
     await req.user.save()
 
     res.send("uplaoded success !!")
@@ -151,7 +153,7 @@ router.get('/users/:id/avatar', async (req, res) => {
         if (!user) {
             throw new Error("User not found !!")
         }
-        res.set('Content-Type', 'image/jpeg')
+        res.set('Content-Type', 'image/png')
         res.send(user.avatar)
     } catch (error) {
         res.status(404).send(error.message)
