@@ -1,8 +1,5 @@
-const User = require('../models/userModel')
-const express = require('express')
-const auth = require('../middleware/auth.js')
-const multer = require('multer')
-const sharp = require('sharp')
+const { User, express, auth, multer, sharp } = require("../imports/commonImports")
+
 const router = new express.Router
 
 router.post('/users/login', async (request, response) => {

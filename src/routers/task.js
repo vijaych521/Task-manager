@@ -1,6 +1,4 @@
-const express = require('express')
-const Task = require('../models/taskModel')
-const auth = require('../middleware/auth.js')
+const { Task, express, auth } = require("../imports/commonImports")
 
 const router = new express.Router
 
