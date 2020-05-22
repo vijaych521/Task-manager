@@ -1,6 +1,7 @@
 const User = require('../models/userModel')
 const express = require('express')
 const auth = require('../middleware/auth.js')
+const multer = require('multer')
 
 const router = new express.Router
 
@@ -104,6 +105,56 @@ router.post('/users/logoutAll', auth, async (req, res) => {
         res.send("Logout successfully from all other devices")
     } catch (error) {
         res.status(500).send("unable to logout...")
+    }
+})
+
+// adding config and validation for file upload
+const upload = multer({
+    limits: {
+        fileSize: 1000000 // 1
+    },
+    fileFilter(req, file, callback) {
+        if (!file.originalname.match(/\.(png|jpg|JPG|jpeg|jfif)$/))
+            return callback(new Error("Please upload image file !!"))
+        callback(undefined, true)
+    }
+})
+
+// Upload user profile image
+router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
+    req.user.avatar = req.file.buffer
+    await req.user.save()
+
+    res.send("uplaoded success !!")
+}, (error, req, res, next) => {
+    // this callback is redirected from middleware i.e upload.single
+    res.send({ 'error': error.message })
+})
+
+// DELETE user profile image
+router.delete('/users/me/avatar', auth, async (req, res) => {
+    req.user.avatar = undefined
+    await req.user.save()
+    res.send("deteled profile image")
+})
+
+// Setup static directory to serve
+const path = require('path')
+const publicDirectoryPath = path.join(__dirname, '../../avatars')
+// console.log(publicDirectoryPath)
+router.use(express.static(publicDirectoryPath))
+
+// GET user image
+router.get('/users/:id/avatar', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id)
+        if (!user) {
+            throw new Error("User not found !!")
+        }
+        res.set('Content-Type', 'image/jpeg')
+        res.send(user.avatar)
+    } catch (error) {
+        res.status(404).send(error.message)
     }
 })
 
