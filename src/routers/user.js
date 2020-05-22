@@ -1,8 +1,5 @@
-const User = require('../models/userModel')
-const express = require('express')
-const auth = require('../middleware/auth.js')
-const multer = require('multer')
-
+const { User, express, auth, multer, sharp } = require("../imports/commonImports")
+const sgMail = require('../email/email_config')
 const router = new express.Router
 
 router.post('/users/login', async (request, response) => {
@@ -34,6 +31,7 @@ router.post('/users', async (request, response) => {
     const user = new User(request.body)
     try {
         const savedUser = await user.save()
+        sgMail.sendSgEmail(savedUser.email, savedUser.name)
         const token = await user.generateAuthToken()
         response.status(201).send({ savedUser, token })
     } catch (error) {
@@ -77,6 +75,7 @@ router.patch('/users/me', auth, async (request, response) => {
 // delete user 
 router.delete('/users/me', auth, async (request, response) => {
     try {
+        sgMail.sendCancleEmail(request.user.email, request.user.name)
         await request.user.remove() // here request object is updated from 'auth" function
         response.status(200).send({ "message": "User removed Successfully", user: request.user })
     } catch (error) {
@@ -122,7 +121,9 @@ const upload = multer({
 
 // Upload user profile image
 router.post('/users/me/avatar', auth, upload.single('avatar'), async (req, res) => {
-    req.user.avatar = req.file.buffer
+    // req.user.avatar = req.file.buffer
+    const buffer = await sharp(req.file.buffer).resize({ width: 250, height: 250 }).png().toBuffer()
+    req.user.avatar = buffer
     await req.user.save()
 
     res.send("uplaoded success !!")
@@ -151,7 +152,7 @@ router.get('/users/:id/avatar', async (req, res) => {
         if (!user) {
             throw new Error("User not found !!")
         }
-        res.set('Content-Type', 'image/jpeg')
+        res.set('Content-Type', 'image/png')
         res.send(user.avatar)
     } catch (error) {
         res.status(404).send(error.message)
